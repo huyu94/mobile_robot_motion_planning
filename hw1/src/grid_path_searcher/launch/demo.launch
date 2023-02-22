@@ -1,16 +1,12 @@
 <launch>
 
-<arg name="map_size_x" default="10.0"/>
-<arg name="map_size_y" default="10.0"/>
-<arg name="map_size_z" default=" 2.0"/>
+<arg name="map_size_x" default="20.0"/>
+<arg name="map_size_y" default="20.0"/>
+<arg name="map_size_z" default=" 10.0"/>
 
 <arg name="start_x" default=" 0.0"/>
 <arg name="start_y" default=" 0.0"/>
-<arg name="start_z" default=" 0.0"/>
-
-<arg name="start_vx" default=" 0.2"/>
-<arg name="start_vy" default=" 0.2"/>
-<arg name="start_vz" default=" 0.0"/>
+<arg name="start_z" default=" 1.0"/>
 
   <node pkg="grid_path_searcher" type="demo_node" name="demo_node" output="screen" required = "true">
       <remap from="~waypoints"       to="/waypoint_generator/waypoints"/>
@@ -22,13 +18,9 @@
       <param name="map/y_size"       value="$(arg map_size_y)"/>
       <param name="map/z_size"       value="$(arg map_size_z)"/>
 
-      <param name="planning/start_x"  value="$(arg start_x)"/>
-      <param name="planning/start_y"  value="$(arg start_y)"/>
-      <param name="planning/start_z"  value="$(arg start_z)"/>
-      <param name="planning/start_vx" value="$(arg start_vx)"/>
-      <param name="planning/start_vy" value="$(arg start_vy)"/>
-      <param name="planning/start_vz" value="$(arg start_vz)"/>
-
+      <param name="planning/start_x" value="$(arg start_x)"/>
+      <param name="planning/start_y" value="$(arg start_y)"/>
+      <param name="planning/start_z" value="$(arg start_z)"/>
   </node>
 
   <node pkg ="grid_path_searcher" name ="random_complex" type ="random_complex" output = "screen">    
@@ -51,7 +43,7 @@
 
       <param name="CircleShape/lower_circle_rad"   value="0.6"/>        
       <param name="CircleShape/upper_circle_rad"   value="2.0"/>        
-      
+
       <param name="sensing/rate"   value="0.5"/>        
   </node>
 
