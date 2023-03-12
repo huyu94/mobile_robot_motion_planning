@@ -1,0 +1,8 @@
+prefix=/home/huyu/code/mobile_robot_motion_planning/hw1/devel
+
+Name: rviz_plugins
+Description: Description of rviz_plugins
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
