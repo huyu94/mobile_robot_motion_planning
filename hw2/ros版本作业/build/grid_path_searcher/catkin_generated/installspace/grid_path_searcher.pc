@@ -1,0 +1,8 @@
+prefix=/home/huyu/code/mobile_robot_motion_planning/hw2/ros版本作业/install
+
+Name: grid_path_searcher
+Description: Description of grid_path_searcher
+Version: 0.0.1
+Cflags: -I${prefix}/include
+Libs: -L${prefix}/lib 
+Requires: 
