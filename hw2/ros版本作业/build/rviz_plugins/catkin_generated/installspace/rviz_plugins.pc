@@ -1,8 +1,0 @@
-prefix=/home/huyu/code/mobile_robot_motion_planning/hw2/ros版本作业/install
-
-Name: rviz_plugins
-Description: Description of rviz_plugins
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 
