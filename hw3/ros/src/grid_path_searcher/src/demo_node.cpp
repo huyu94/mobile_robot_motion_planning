@@ -57,6 +57,7 @@ RRTstarPreparatory * _RRTstar_preparatory     = new RRTstarPreparatory();
 
 void rcvWaypointsCallback(const nav_msgs::Path & wp);
 void rcvPointCloudCallBack(const sensor_msgs::PointCloud2 & pointcloud_map);
+// diaoyong 
 void pathFinding(const Vector3d start_pt, const Vector3d target_pt);
 void visRRTstarPath(vector<Vector3d> nodes );
 
@@ -105,10 +106,10 @@ void rcvPointCloudCallBack(const sensor_msgs::PointCloud2 & pointcloud_map)
     cloud_vis.width    = cloud_vis.points.size();
     cloud_vis.height   = 1;
     cloud_vis.is_dense = true;
-
+    // from PointCloud<T> to PointCloud2
     pcl::toROSMsg(cloud_vis, map_vis);
 
-    map_vis.header.frame_id = "/world";
+    map_vis.header.frame_id = "world";
     _grid_map_vis_pub.publish(map_vis);
 
     _has_map = true;
@@ -135,6 +136,9 @@ public:
         *
         *
         */
+        double x = state3D->values[0];
+        double y = state3D->values[1];
+        double z = state3D->values[2];
 
         return _RRTstar_preparatory->isObsFree(x, y, z);
     }
@@ -187,6 +191,9 @@ void pathFinding(const Vector3d start_pt, const Vector3d target_pt)
     *
     *
     */
+    start[0] = start_pt(0);
+    start[1] = start_pt(1);
+    start[2] = start_pt(2);
 
     // Set our robot's goal state
     ob::ScopedState<> goal(space);
@@ -197,7 +204,9 @@ void pathFinding(const Vector3d start_pt, const Vector3d target_pt)
     *
     *
     */
-
+    goal[0] = target_pt(0);
+    goal[1] = target_pt(1);
+    goal[2] = target_pt(2);
     // Create a problem instance
 
     /**
@@ -208,9 +217,7 @@ void pathFinding(const Vector3d start_pt, const Vector3d target_pt)
     *
     *
     */
-
-    // Set the start and goal states
-    pdef->setStartAndGoalStates(start, goal);
+    auto pdef(std::make_shared<ob::ProblemDefinition>(si));
 
     // Set the optimization objective
     /**
@@ -220,8 +227,10 @@ void pathFinding(const Vector3d start_pt, const Vector3d target_pt)
     getPathLengthObjective() and getThresholdPathLengthObj()
     *
     *
-    */  
-
+    */
+    // Set the start and goal states
+    pdef->setStartAndGoalStates(start, goal);
+    
     // Construct our optimizing planner using the RRTstar algorithm.
     /**
     *
@@ -231,14 +240,17 @@ void pathFinding(const Vector3d start_pt, const Vector3d target_pt)
     *
     *
     */ 
+    auto optimizerPlanner(std::make_shared<og::RRTstar>(si));
+
+
 
     // Set the problem instance for our planner to solve
-    optimizingPlanner->setProblemDefinition(pdef);
-    optimizingPlanner->setup();
+    optimizerPlanner->setProblemDefinition(pdef);
+    optimizerPlanner->setup();
 
     // attempt to solve the planning problem within one second of
     // planning time
-    ob::PlannerStatus solved = optimizingPlanner->solve(1.0);
+    ob::PlannerStatus solved = optimizerPlanner->ob::Planner::solve(1.0);
 
     if (solved)
     {
@@ -258,6 +270,8 @@ void pathFinding(const Vector3d start_pt, const Vector3d target_pt)
             *
             *
             */ 
+            Vector3d waypoint(state->operator[](0),state->operator[](1),state->operator[](2));
+            path_points.push_back(waypoint);
         }
         visRRTstarPath(path_points);       
     }
@@ -314,11 +328,11 @@ int main(int argc, char** argv)
 void visRRTstarPath(vector<Vector3d> nodes )
 {
     visualization_msgs::Marker Points, Line; 
-    Points.header.frame_id = Line.header.frame_id = "world";
-    Points.header.stamp    = Line.header.stamp    = ros::Time::now();
-    Points.ns              = Line.ns              = "demo_node/RRTstarPath";
-    Points.action          = Line.action          = visualization_msgs::Marker::ADD;
-    Points.pose.orientation.w = Line.pose.orientation.w = 1.0;
+    Line.header.frame_id = "/world";
+    Line.header.stamp    = ros::Time::now();
+    Line.ns              = "demo_node/RRTstarPath";
+    Line.action          = visualization_msgs::Marker::ADD;
+    Line.pose.orientation.w = 1.0;
     Points.id = 0;
     Line.id   = 1;
     Points.type = visualization_msgs::Marker::POINTS;
