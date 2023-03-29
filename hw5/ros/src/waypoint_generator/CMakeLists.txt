@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(waypoint_trajectory_generator)
+project(waypoint_generator)
 
-set(CMAKE_VERBOSE_MAKEFILE "false")
+set(CMAKE_VERBOSE_MAKEFILE "true")
 include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+if(COMPILER_SUPPORTS_CXX17)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 elseif(COMPILER_SUPPORTS_CXX0X)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 else()
@@ -20,23 +20,16 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf
   nav_msgs
-  quadrotor_msgs
 )
 catkin_package()
 
-find_package(Eigen3 REQUIRED)
-set(Eigen3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
-
-include_directories(include
-  	${catkin_INCLUDE_DIRS}
-  	${Eigen3_INCLUDE_DIRS} 
+include_directories(include)
+include_directories(
+  ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(trajectory_generator_node 
-	src/trajectory_generator_node.cpp
-	src/trajectory_generator_waypoint.cpp
-)
+add_executable(waypoint_generator src/waypoint_generator.cpp)
 
-target_link_libraries(trajectory_generator_node
+target_link_libraries(waypoint_generator
    ${catkin_LIBRARIES}
 )
