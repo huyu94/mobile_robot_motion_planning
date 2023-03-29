@@ -30,30 +30,57 @@ for iter = 1:3000
     x_rand=[];
     %Step 1: 在地图中随机采样一个点x_rand
     %提示：用（x_rand(1),x_rand(2)）表示环境中采样点的坐标
-    
-    x_near=[];
+    x_rand = rand(1,2).*[xL,yL];
+    [~,num] = size(T.v);
+    dis_array = zeros(num,1);
+
+    % 当前随机点到其他所有节点的距离
+    for i = 1:num
+        dis_array(i) = norm(x_rand-[T.v(i).x,T.v(i).y]);
+    end
+
     %Step 2: 遍历树，从树中找到最近邻近点x_near 
     %提示：x_near已经在树T里
-    
-    x_new=[];
+    [min_value,min_index] = min(dis_array);
+    x_near=[T.v(min_index).x,T.v(min_index).y];
+
+
     %Step 3: 扩展得到x_new节点
     %提示：注意使用扩展步长Delta
+    dis = norm(x_near-x_rand);
+    x_new = x_near + Delta/dis * (x_rand-x_near);
     
     %检查节点是否是collision-free
-    %if ~collisionChecking(x_near,x_new,Imp) 
-    %    continue;
-    %end
+    if ~collisionChecking(x_near,x_new,Imp) 
+       continue;
+    end
     count=count+1;
     
     %Step 4: 将x_new插入树T 
     %提示：新节点x_new的父节点是x_near
-    
+    T.v(count).x = x_new(1);
+    T.v(count).y = x_new(2);
+    T.v(count).xPrev = x_near(1);
+    T.v(count).yPrev = x_near(2);
+    T.v(count).dist = norm(x_new-x_near);
+    T.v(count).indPrev = min_index;
+
     %Step 5:检查是否到达目标点附近 
     %提示：注意使用目标点阈值Thr，若当前节点和终点的欧式距离小于Thr，则跳出当前for循环
-    
+    if(norm(x_new-[x_G,y_G])<Thr)
+        xline = linspace(x_near(1),x_new(1));
+        yline = linspace(x_near(2),x_new(2));
+        plot(xline,yline);
+        break;
+    end
+
    %Step 6:将x_near和x_new之间的路径画出来
    %提示 1：使用plot绘制，因为要多次在同一张图上绘制线段，所以每次使用plot后需要接上hold on命令
    %提示 2：在判断终点条件弹出for循环前，记得把x_near和x_new之间的路径画出来
+   hold on
+   xline = linspace(x_near(1),x_new(1));
+   yline = linspace(x_near(2),x_new(2));
+   plot(xline,yline);
    
    pause(0.1); %暂停0.1s，使得RRT扩展过程容易观察
 end
