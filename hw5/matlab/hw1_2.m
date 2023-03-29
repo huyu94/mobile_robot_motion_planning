@@ -37,11 +37,11 @@ for i=0:n_seg-1
     %#####################################################
     % STEP 4: get the coefficients of i-th segment of both x-axis
     % and y-axis
-    Pxi = [];
-    Pyi = [];
+    Pxi = flip(poly_coef_x(i*n_poly_perseg+1:(i+1)*n_poly_perseg));
+    Pyi = flip(poly_coef_y(i*n_poly_perseg+1:(i+1)*n_poly_perseg));
     for t=0:tstep:ts(i+1)
-        X_n(k)  = polyval(Pxi,t);
-        Y_n(k)  = polyval(Pyi,t);
+        X_n(k) = polyval(Pxi,t);
+        Y_n(k) = polyval(Pyi,t);
         k = k+1;
     end
 end
@@ -53,28 +53,27 @@ scatter(path(1:size(path,1),1),path(1:size(path,1),2));
 function poly_coef = MinimumSnapCloseformSolver(waypoints, ts, n_seg, n_order)
     start_cond = [waypoints(1), 0, 0, 0];
     end_cond =   [waypoints(end), 0, 0, 0];
+    t_order = 4;
     %#####################################################
     % you have already finished this function in hw1
-    Q = getQ(n_seg, n_order, ts);
+    Q = getQ(n_seg, n_order,t_order, ts);
     %#####################################################
     % STEP 1: compute M
-    M = getM(n_seg, n_order, ts);
+%     M = getM_cp(n_seg, n_order, ts);
+    M = getM(n_seg,n_order,t_order,ts);
     %#####################################################
     % STEP 2: compute Ct
-    Ct = getCt(n_seg, n_order);
+    Ct = getCt(n_seg, n_order,t_order);
     C = Ct';
     R = C * inv(M)' * Q * inv(M) * Ct;
-    R_cell = mat2cell(R, [n_seg+7 3*(n_seg-1)], [n_seg+7 3*(n_seg-1)]);
+    R_cell = mat2cell(R, [n_seg-1+t_order*2 (t_order-1)*(n_seg-1)], [n_seg-1+t_order*2 (t_order-1)*(n_seg-1)]);
+%     R_cell = mat2cell(R,[n_seg-1+2*t_order,3*(n_seg-1)],[n_seg-1+2*t_order,3*(n_seg-1)])
     R_pp = R_cell{2, 2};
     R_fp = R_cell{1, 2};
     %#####################################################
     % STEP 3: compute dF
-    dF = [];
+    dF = [start_cond';waypoints(2:end-1);end_cond'];
     %
-    %
-    %
-    %
-
     dP = -inv(R_pp) * R_fp' * dF;
     poly_coef = inv(M) * Ct * [dF;dP];
 end
