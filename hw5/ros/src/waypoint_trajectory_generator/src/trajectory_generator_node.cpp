@@ -48,7 +48,7 @@ using namespace Eigen;
 //Get the path points 
 void rcvWaypointsCallBack(const nav_msgs::Path & wp)
 {   
-    vector<Vector3d> wp_list;
+    vector<Vector3d> wp_list; //不带起始点的路径点
     wp_list.clear();
 
     for (int k = 0; k < (int)wp.poses.size(); k++)
@@ -60,7 +60,7 @@ void rcvWaypointsCallBack(const nav_msgs::Path & wp)
             break;
     }
 
-    MatrixXd waypoints(wp_list.size() + 1, 3);
+    MatrixXd waypoints(wp_list.size() + 1, 3); //把路径点变成一个nx4的矩阵，并且在0的位置添加起始点
     waypoints.row(0) = _startPos;
     
     for(int k = 0; k < (int)wp_list.size(); k++)
@@ -71,12 +71,13 @@ void rcvWaypointsCallBack(const nav_msgs::Path & wp)
     trajGeneration(waypoints);
 }
 
+/* 核心算法，生成轨迹，并且可视化*/
 void trajGeneration(Eigen::MatrixXd path)
 {
     TrajectoryGeneratorWaypoint  trajectoryGeneratorWaypoint;
     
-    MatrixXd vel = MatrixXd::Zero(2, 3); 
-    MatrixXd acc = MatrixXd::Zero(2, 3);
+    MatrixXd vel = MatrixXd::Zero(2, 3);  // 起始速度+终止速度
+    MatrixXd acc = MatrixXd::Zero(2, 3);  // 起始加速度+终止加速度
 
     vel.row(0) = _startVel;
 
@@ -86,10 +87,10 @@ void trajGeneration(Eigen::MatrixXd path)
     // generate a minimum-snap piecewise monomial polynomial-based trajectory
     _polyCoeff = trajectoryGeneratorWaypoint.PolyQPGeneration(_dev_order, path, vel, acc, _polyTime);
 
-    visWayPointPath(path);
+    visWayPointPath(path);   
 
     //After you finish your homework, you can use the function visWayPointTraj below to visulize your trajectory
-    //visWayPointTraj( _polyCoeff, _polyTime);
+    visWayPointTraj( _polyCoeff, _polyTime);
 }
 
 int main(int argc, char** argv)
@@ -99,11 +100,11 @@ int main(int argc, char** argv)
 
     nh.param("planning/vel",   _Vel,   1.0 );
     nh.param("planning/acc",   _Acc,   1.0 );
-    nh.param("planning/dev_order", _dev_order,  3 );
-    nh.param("planning/min_order", _min_order,  3 );
-    nh.param("vis/vis_traj_width", _vis_traj_width, 0.15);
+    nh.param("planning/dev_order", _dev_order,  3 ); //dev_order 求导的阶数
+    nh.param("planning/min_order", _min_order,  3 ); //
+    nh.param("vis/vis_traj_width", _vis_traj_width, 0.15); //可视化轨迹的长度
 
-    //_poly_numID is the maximum order of polynomial
+    //_poly_numID is the maximum order of polynomial  3阶导数，3*2=6，要6个系数，也就是5阶多项式
     _poly_num1D = 2 * _dev_order;
 
     //state of start point
@@ -115,10 +116,10 @@ int main(int argc, char** argv)
     _startVel(1)  = 0;
     _startVel(2)  = 0;
     
-    _way_pts_sub     = nh.subscribe( "waypoints", 1, rcvWaypointsCallBack );
+    _way_pts_sub     = nh.subscribe( "waypoints", 1, rcvWaypointsCallBack ); //订阅控制点，然后回调函数中生成轨迹。
 
-    _wp_traj_vis_pub = nh.advertise<visualization_msgs::Marker>("vis_trajectory", 1);
-    _wp_path_vis_pub = nh.advertise<visualization_msgs::Marker>("vis_waypoint_path", 1);
+    _wp_traj_vis_pub = nh.advertise<visualization_msgs::Marker>("vis_trajectory", 1); //发布轨迹信息，方便可视化
+    _wp_path_vis_pub = nh.advertise<visualization_msgs::Marker>("vis_waypoint_path", 1); //发布控制点信息，方便可视化，都是由marker组成
 
     ros::Rate rate(100);
     bool status = ros::ok();
@@ -131,17 +132,18 @@ int main(int argc, char** argv)
     return 0;
 }
 
-void visWayPointTraj( MatrixXd polyCoeff, VectorXd time)
+/**/
+void visWayPointTraj(MatrixXd polyCoeff, VectorXd time)
 {        
     visualization_msgs::Marker _traj_vis;
 
     _traj_vis.header.stamp       = ros::Time::now();
-    _traj_vis.header.frame_id    = "/map";
+    _traj_vis.header.frame_id    = "map";
 
     _traj_vis.ns = "traj_node/trajectory_waypoints";
     _traj_vis.id = 0;
     _traj_vis.type = visualization_msgs::Marker::SPHERE_LIST;
-    _traj_vis.action = visualization_msgs::Marker::ADD;
+    _traj_vis.action = visualization_msgs::Marker::ADD; //加入、修改、还是删除
     _traj_vis.scale.x = _vis_traj_width;
     _traj_vis.scale.y = _vis_traj_width;
     _traj_vis.scale.z = _vis_traj_width;
@@ -188,7 +190,7 @@ void visWayPointPath(MatrixXd path)
 {
     visualization_msgs::Marker points, line_list;
     int id = 0;
-    points.header.frame_id    = line_list.header.frame_id    = "/map";
+    points.header.frame_id    = line_list.header.frame_id    = "map";
     points.header.stamp       = line_list.header.stamp       = ros::Time::now();
     points.ns                 = line_list.ns                 = "wp_path";
     points.action             = line_list.action             = visualization_msgs::Marker::ADD;
@@ -247,6 +249,7 @@ void visWayPointPath(MatrixXd path)
     _wp_path_vis_pub.publish(line_list);
 }
 
+/*多项式系数相乘，得到位置*/
 Vector3d getPosPoly( MatrixXd polyCoeff, int k, double t )
 {
     Vector3d ret;
@@ -269,6 +272,7 @@ Vector3d getPosPoly( MatrixXd polyCoeff, int k, double t )
     return ret;
 }
 
+/*时间分配*/
 VectorXd timeAllocation( MatrixXd Path)
 { 
     VectorXd time(Path.rows() - 1);
@@ -284,6 +288,28 @@ VectorXd timeAllocation( MatrixXd Path)
     The time allocation is many relative timeline but not one common timeline
 
     */
-    
+    double _Vel = 1.0; //最大速度
+    double _Acc = 1.0; //最大加速度
+    double t_slope = _Vel/_Acc;
+    double max_s_triangle = t_slope * _Vel / 2;
+    std::cout << "Path: " << Path << std::endl;
+
+    time = VectorXd::Ones(Path.rows()-1);
+    for(int k=0;k<Path.rows()-1;k++){
+        Vector3d p1_2 = Path.row(k) - Path.row(k+1);
+        double s = std::sqrt(p1_2.dot(p1_2));
+
+        if(s <= max_s_triangle){
+            time(k) = 2.0 * s / _Acc;
+        }
+        else if(s <= 2 * max_s_triangle){
+            time(k) = t_slope + 2 * (s - max_s_triangle) / _Acc;
+        }
+        else{
+            time(k) = (s - 2 * max_s_triangle) / _Acc + 2 * t_slope;
+        }
+    }
+    std::cout << "time: " << time <<std::endl;
+
     return time;
 }

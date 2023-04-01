@@ -14,6 +14,11 @@ class TrajectoryGeneratorWaypoint {
 
         ~TrajectoryGeneratorWaypoint();
 
+        Eigen::MatrixXd getQ(const int segment, const int d_order, const int p_order, const Eigen::MatrixXd &time);
+        Eigen::MatrixXd getCoeff(const int d_order, const int p_order);
+        Eigen::MatrixXd getM(const int segment, const int d_order, const int p_order, const Eigen::MatrixXd &time);
+        Eigen::MatrixXd getCt(const int segment, const int d_order,const int p_order);
+
         Eigen::MatrixXd PolyQPGeneration(
             const int order,
             const Eigen::MatrixXd &Path,
